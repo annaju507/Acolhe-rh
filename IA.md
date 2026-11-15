@@ -36,3 +36,7 @@ _Preencher depois de rodar o `avaliar.py`: qual pergunta errou, qual regra foi m
 ## Decisão registrada: troca do modelo
 
 O plano era usar o Gemini. Na primeira execução, o modelo escolhido tinha sido descontinuado para contas novas. Com o modelo novo, as chamadas ficavam presas: o painel do Google mostrou que a camada gratuita permite 5 pedidos por minuto e 20 por dia, e o agente faz de 2 a 3 chamadas por pergunta. Só o teste das 40 perguntas pediria cerca de 100 chamadas. A solução foi usar o GPT-4o mini pelos créditos do n8n, sem mudar o agente, as ferramentas nem o resto do fluxo.
+
+## Correção: resposta fora do formato
+
+Num teste com "Estagiário tem férias?", o modelo respondeu certo, mas em texto corrido, ignorando o pedido de JSON do prompt. O app recebeu status "erro". Correção: ativar no nó do modelo o modo de resposta JSON obrigatório (`responseFormat: json_object`), em vez de depender só da instrução no prompt. Depois disso, as três perguntas de exemplo passaram.

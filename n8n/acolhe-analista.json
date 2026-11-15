@@ -15,7 +15,7 @@
           ]
         }
       },
-      "id": "f80d945f-0568-46f2-9e74-5dec62403ee1",
+      "id": "4c209250-5e79-43b5-afff-681d09a84474",
       "name": "toda_segunda_8h",
       "type": "n8n-nodes-base.scheduleTrigger",
       "typeVersion": 1.2,
@@ -26,7 +26,7 @@
     },
     {
       "parameters": {},
-      "id": "34971a6f-f412-4c8c-96b2-48a2802b07fe",
+      "id": "c8245f66-9eef-4acb-bb38-5ca42c2e3c11",
       "name": "rodar_agora",
       "type": "n8n-nodes-base.manualTrigger",
       "typeVersion": 1,
@@ -50,7 +50,7 @@
         },
         "options": {}
       },
-      "id": "848c330d-6c95-4a72-816f-0ff55eceaaba",
+      "id": "fe2371e7-3f8b-4494-be0a-4a0ec5a6f2ec",
       "name": "ler_registros",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
@@ -63,7 +63,7 @@
       "parameters": {
         "jsCode": "// Calcula os números da semana com código (sem IA) e prepara a lista para o analista.\nconst seteDias = 7 * 24 * 60 * 60 * 1000;\nconst agora = Date.now();\n\nconst linhas = $input.all()\n  .map((item) => item.json)\n  .filter((l) => l.pergunta && l.data && agora - new Date(l.data).getTime() <= seteDias);\n\nconst contar = (campo) => linhas.reduce((acc, l) => {\n  const chave = l[campo] || 'vazio';\n  acc[chave] = (acc[chave] || 0) + 1;\n  return acc;\n}, {});\n\nconst numeros = {\n  total: linhas.length,\n  respondidas: linhas.filter((l) => l.status === 'respondida').length,\n  encaminhadas: linhas.filter((l) => l.status === 'encaminhada').length,\n  por_tema: contar('tema'),\n  por_motivo: contar('motivo_encaminhamento'),\n};\n\n// Perguntas sensíveis entram só na contagem: o texto não vai para o modelo.\nconst perguntas = linhas.map((l) => ({\n  pergunta: l.motivo_encaminhamento === 'sensivel' ? '[sensível, texto omitido]' : l.pergunta,\n  tema: l.tema,\n  status: l.status,\n  motivo: l.motivo_encaminhamento || null,\n}));\n\nreturn [{ json: { numeros, perguntas } }];\n"
       },
-      "id": "3ea49822-8f1b-483a-80ef-e1b2a576e3e8",
+      "id": "febc19c0-6bfd-4f37-bbfa-4a80ce3eb1b1",
       "name": "calcular_numeros",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -77,7 +77,7 @@
         "promptType": "define",
         "text": "=Você é o analista do Acolhe, o assistente de onboarding da Lumina Tecnologia (empresa fictícia). Toda semana você lê as perguntas que os estagiários fizeram ao Acolhe e escreve um relatório curto para o time de RH.\n\nVocê recebe:\n1. NÚMEROS: já calculados por código. Use exatamente esses números e não recalcule.\n2. PERGUNTAS: a lista da semana, com tema, status e motivo de encaminhamento.\n\nO que fazer:\n* Resuma a semana em até 3 frases.\n* Liste os temas mais frequentes, com uma observação útil sobre cada um.\n* Identifique lacunas do manual: perguntas encaminhadas como fora_da_base que se repetem ou que seriam fáceis de responder se o manual tivesse a informação. Para cada lacuna, dê exemplos de perguntas e uma sugestão concreta de texto ou seção para o manual.\n* Sugira até 3 melhorias para o onboarding com base nos padrões (por exemplo, um tema que gera muitas dúvidas pode virar um item da integração do primeiro dia).\n\nRegras:\n* Não cite nem tente identificar quem perguntou.\n* Perguntas com motivo \"sensivel\" entram só na contagem. Não reproduza o texto delas e não comente o conteúdo.\n* Não invente números nem perguntas que não estão na lista.\n* Não use travessões.\n* Se houver poucas perguntas, diga que a amostra é pequena.\n\nResponda somente com um JSON válido, sem texto antes ou depois e sem bloco de código:\n{\n  \"resumo\": \"até 3 frases\",\n  \"temas_frequentes\": [{\"tema\": \"nome\", \"quantidade\": 0, \"observacao\": \"frase\"}],\n  \"lacunas\": [{\"assunto\": \"nome curto\", \"exemplos\": [\"pergunta\"], \"sugestao\": \"o que acrescentar no manual\"}],\n  \"melhorias\": [\"frase\"]\n}\n\nNÚMEROS:\n{{ JSON.stringify($json.numeros, null, 2) }}\n\nPERGUNTAS:\n{{ JSON.stringify($json.perguntas, null, 2) }}"
       },
-      "id": "b0f83107-5594-419f-832b-da36af6395e6",
+      "id": "6b531fdd-2020-4962-935f-18ccd0c5d8d8",
       "name": "agente_analista",
       "type": "@n8n/n8n-nodes-langchain.chainLlm",
       "typeVersion": 1.5,
@@ -98,7 +98,7 @@
           "temperature": 0.3
         }
       },
-      "id": "778e5491-3c68-47c0-911a-e1dc1fe3ddb5",
+      "id": "87bc7112-195f-4333-b3d3-1df7c40fb65e",
       "name": "modelo",
       "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
       "typeVersion": 1.3,
@@ -111,7 +111,7 @@
       "parameters": {
         "jsCode": "// Lê o JSON do analista e prepara a linha da aba analises.\nconst bruto = String($json.text || $json.output || '').trim();\nconst { numeros } = $('calcular_numeros').first().json;\n\nlet analise;\ntry {\n  const semCercas = bruto.replace(/^```(json)?/i, '').replace(/```$/, '').trim();\n  analise = JSON.parse(semCercas.slice(semCercas.indexOf('{'), semCercas.lastIndexOf('}') + 1));\n} catch (erro) {\n  analise = { resumo: bruto.slice(0, 500), temas_frequentes: [], lacunas: [], melhorias: [] };\n}\n\n// Corpo do e-mail para o RH, em HTML simples.\nconst esc = (t) => String(t || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));\nconst lista = (itens) => itens.length ? '<ul>' + itens.map((i) => '<li>' + i + '</li>').join('') + '</ul>' : '<p>Nenhuma.</p>';\nconst email_html = [\n  '<h2>Acolhe: relatório da semana</h2>',\n  '<p><b>' + numeros.total + '</b> perguntas, <b>' + numeros.respondidas + '</b> respondidas pelo manual e <b>' + numeros.encaminhadas + '</b> encaminhadas ao RH.</p>',\n  '<p>' + esc(analise.resumo) + '</p>',\n  '<h3>Temas mais frequentes</h3>',\n  lista((analise.temas_frequentes || []).map((t) => '<b>' + esc(t.tema) + '</b> (' + esc(t.quantidade) + '): ' + esc(t.observacao))),\n  '<h3>Lacunas no manual</h3>',\n  lista((analise.lacunas || []).map((l) => '<b>' + esc(l.assunto) + '</b>: ' + esc(l.sugestao))),\n  '<h3>Sugestões para o onboarding</h3>',\n  lista((analise.melhorias || []).map(esc)),\n  '<p style=\"color:#777\">Gerado automaticamente pelo agente analista do Acolhe. Perguntas sensíveis entram só na contagem.</p>',\n].join('');\n\nreturn [{\n  json: {\n    email_html,\n    data: new Date().toISOString(),\n    total: numeros.total,\n    respondidas: numeros.respondidas,\n    encaminhadas: numeros.encaminhadas,\n    analise_json: JSON.stringify(analise),\n  },\n}];\n"
       },
-      "id": "7e346a33-5ac1-405c-bde4-6c5d16f99eb7",
+      "id": "f358e745-a761-4fe4-9310-c383b812b598",
       "name": "interpretar_analise",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -141,7 +141,7 @@
         },
         "options": {}
       },
-      "id": "70134e55-53e9-4694-8fd5-47bbb184618e",
+      "id": "cece6fd9-8124-42dc-8e32-c7d0652a6fe6",
       "name": "salvar_analise",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
@@ -160,7 +160,7 @@
           "appendAttribution": false
         }
       },
-      "id": "4cf8f87b-90bf-49bf-85c1-7453654464db",
+      "id": "b49f9987-af96-413b-a469-42378fcbb89d",
       "name": "enviar_relatorio_rh",
       "type": "n8n-nodes-base.gmail",
       "typeVersion": 2.1,

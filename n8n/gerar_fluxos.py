@@ -154,7 +154,7 @@ return [{
         no("modelo", "@n8n/n8n-nodes-langchain.lmChatOpenAi", 1.3, [160, 240], {
             "model": {"__rl": True, "mode": "list", "value": MODELO},
             "responsesApiEnabled": False,
-            "options": {"temperature": 0.2},
+            "options": {"temperature": 0.2, "responseFormat": "json_object"},
         }),
         no("consultar_manual", "@n8n/n8n-nodes-langchain.toolCode", 1.3, [320, 240], {
             "name": "consultar_manual",
