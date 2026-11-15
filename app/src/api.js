@@ -1,7 +1,10 @@
 // Comunicação com os webhooks do n8n.
 // A chave do Gemini nunca passa por aqui: ela fica guardada no n8n.
 
-const BASE = (import.meta.env.VITE_N8N_WEBHOOK_BASE || '').replace(/\/$/, '')
+// O endereço dos webhooks não é segredo: a chave do modelo fica guardada no n8n.
+// A variável de ambiente permite apontar para outro n8n sem mudar o código.
+const PADRAO = 'https://annajuels.app.n8n.cloud/webhook'
+const BASE = (import.meta.env.VITE_N8N_WEBHOOK_BASE || PADRAO).replace(/\/$/, '')
 
 export const configurado = Boolean(BASE)
 
