@@ -73,6 +73,12 @@ Gerado pelo agente analista a partir das 88 perguntas registradas nos testes. Ve
 
 ![Relatório de análise das perguntas](docs/relatorio-semanal.png)
 
+### E-mail que o RH recebe toda segunda
+
+O mesmo relatório chega por e-mail, montado pelo n8n a partir da saída do agente analista.
+
+![E-mail do relatório semanal](docs/email-relatorio.png)
+
 ## Limites
 
 * As 40 perguntas foram escritas para o teste e o teste de tempo usou poucos voluntários. Isso mede o comportamento do agente, não economia comprovada numa empresa.
