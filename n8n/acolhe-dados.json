@@ -10,7 +10,7 @@
           "allowedOrigins": "*"
         }
       },
-      "id": "6a297396-8bc8-4d54-94aa-c5702b599b43",
+      "id": "8fb12a6d-1317-4c2b-beb0-469ecee8b822",
       "name": "pedir_dados",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
@@ -18,7 +18,7 @@
         0,
         0
       ],
-      "webhookId": "35aee816-affd-48cb-9dd7-876f9caede19"
+      "webhookId": "df21d871-dc6c-480b-879e-ea7f66912df9"
     },
     {
       "parameters": {
@@ -35,7 +35,7 @@
         },
         "options": {}
       },
-      "id": "f2648b4a-9f6f-4b25-891f-0abc27b6ec49",
+      "id": "57ad3cec-48be-4e8c-8124-41e615e8863c",
       "name": "ler_registros",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
@@ -49,7 +49,7 @@
       "parameters": {
         "jsCode": "// Junta os registros num único objeto e protege o que é sensível.\n// O dashboard é público: perguntas sensíveis aparecem só como contagem.\nconst registros = $input.all()\n  .map((item) => item.json)\n  .filter((l) => l.pergunta)\n  .map((l) => ({\n    data: l.data,\n    tema: l.tema,\n    status: l.status,\n    motivo_encaminhamento: l.motivo_encaminhamento || null,\n    fontes: l.fontes || '',\n    pergunta: l.motivo_encaminhamento === 'sensivel' ? null : l.pergunta,\n  }));\n\nreturn [{ json: { registros } }];\n"
       },
-      "id": "c3e982f5-26c4-4a63-b6cb-62aa4e92d021",
+      "id": "8a55cd20-2d15-4b11-a8bc-0b27337e50fc",
       "name": "juntar_registros",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -73,7 +73,7 @@
         },
         "options": {}
       },
-      "id": "70b62f0a-1a34-4d53-9686-3aed903b79e6",
+      "id": "a177eb3c-b37b-4852-8421-806ca1f74bbd",
       "name": "ler_analises",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
@@ -88,7 +88,7 @@
       "parameters": {
         "jsCode": "// Monta a resposta final: registros + análise mais recente.\nconst { registros } = $('juntar_registros').first().json;\n\nconst linhas = $input.all().map((i) => i.json).filter((l) => l.analise_json);\nconst ultima = linhas[linhas.length - 1];\n\nlet analise = null;\nif (ultima) {\n  try {\n    analise = { data: ultima.data, ...JSON.parse(ultima.analise_json) };\n  } catch (erro) {\n    analise = null;\n  }\n}\n\nreturn [{ json: { atualizado_em: new Date().toISOString(), registros, analise } }];\n"
       },
-      "id": "cd65e82f-86e0-4233-9503-ead386fc43bd",
+      "id": "1bcf352b-6f81-465f-9104-e0bef92b53fa",
       "name": "montar_resposta",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
@@ -112,7 +112,7 @@
           }
         }
       },
-      "id": "f0000412-ce0c-4d4b-93a9-c17fe4a553c7",
+      "id": "fbc9788b-a504-483f-bcf4-5d63fdf6b489",
       "name": "responder_dashboard",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,

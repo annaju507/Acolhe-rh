@@ -16,6 +16,7 @@ SAIDA = RAIZ / "n8n"
 
 ID_PLANILHA = "1h2zhqhxczAULQW2Il0lI8px0kq4rNmXv7SCHZSnXoMY"
 EMAIL_RH = "annajuliaeliasandrade@gmail.com"
+COLUNAS_ANALISES = ["data", "total", "respondidas", "encaminhadas", "analise_json"]
 MODELO = "gpt-4o-mini"  # via Gateway credits do n8n (ver README: limite gratuito do Gemini)
 
 
@@ -324,11 +325,14 @@ return [{
         no("salvar_analise", "n8n-nodes-base.googleSheets", 4.5, [1220, 100], {
             "operation": "append",
             **planilha("analises"),
+            # Mapeamento fixo: só as 5 colunas (o e-mail em HTML não vai para a planilha).
             "columns": {
-                "mappingMode": "autoMapInputData",
-                "value": {},
+                "mappingMode": "defineBelow",
+                "value": {c: "={{ $json." + c + " }}" for c in COLUNAS_ANALISES},
                 "matchingColumns": [],
-                "schema": [],
+                "schema": [{"id": c, "displayName": c, "required": False, "defaultMatch": False,
+                            "display": True, "type": "string", "canBeUsedToMatch": True}
+                           for c in COLUNAS_ANALISES],
             },
             "options": {},
         }),
