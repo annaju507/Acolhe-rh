@@ -1,0 +1,39 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "DM Sans", system-ui, sans-serif;
+  --font-display: "Fraunces", Georgia, serif;
+
+  --color-creme: #fbf8f3;
+  --color-areia: #f1ebe0;
+  --color-linha: #e3dacb;
+  --color-floresta: #1f4e47;
+  --color-floresta-escura: #163a35;
+  --color-mel: #f2b84b;
+  --color-mel-claro: #fbe9c4;
+  --color-tinta: #1d1b18;
+  --color-tinta-suave: #5c574f;
+
+  /* séries dos gráficos (paleta validada para daltonismo, slots 1 e 2) */
+  --color-serie-1: #2a78d6;
+  --color-serie-2: #eb6834;
+}
+
+html {
+  color-scheme: light;
+  background: var(--color-creme);
+  color: var(--color-tinta);
+}
+
+body {
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+@keyframes pulsar {
+  0%, 80%, 100% { opacity: 0.25; transform: translateY(0); }
+  40% { opacity: 1; transform: translateY(-2px); }
+}
+.ponto { animation: pulsar 1.2s infinite ease-in-out; }
+.ponto:nth-child(2) { animation-delay: 0.15s; }
+.ponto:nth-child(3) { animation-delay: 0.3s; }

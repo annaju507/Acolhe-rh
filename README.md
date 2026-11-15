@@ -1,1 +1,112 @@
-# Acolhe-rh
+# Acolhe: assistente de onboarding com IA para estagiários
+
+O Acolhe responde as dúvidas de estagiários com base no manual da empresa, sempre citando a seção de onde veio a resposta. Quando não sabe ou quando o assunto é sensível, ele aciona uma pessoa do RH. Uma vez por semana, um segundo agente lê todas as perguntas, aponta o que o manual não cobre e manda um relatório para o RH.
+
+> A Lumina Tecnologia e o manual são fictícios. Nenhum dado real de empresa foi usado.
+
+**Demo:** _link da Vercel aqui_
+
+## O problema
+
+Trabalhando na área de RH e participando de uma cerimônia de onboarding, vi de perto quanto tempo os novos estagiários esperavam para ter resposta a dúvidas simples (data da bolsa, recesso, ponto). O motivo não era descaso: era volume. Poucas pessoas para muitas perguntas repetidas, que já estavam no manual.
+
+## Como funciona
+
+```
+Estagiário (chat React)
+        │  POST /webhook/acolhe
+        ▼
+┌─────────────── n8n ────────────────┐
+│ Agente atendente (GPT-4o mini)          │
+│   ├─ ferramenta consultar_manual   │  lê só as seções que precisa
+│   └─ ferramenta encaminhar_rh      │  e-mail ao RH em casos sensíveis
+│ registrar_pergunta (passo fixo) ───┼──► Google Sheets (registros)
+└────────────────────────────────────┘
+                                          │
+Toda segunda 8h                           ▼
+┌─────────────── n8n ────────────────┐
+│ calcular_numeros (JavaScript)      │  conta é trabalho de código
+│ Agente analista (GPT-4o mini)           │  interpretar é trabalho da IA
+│ salvar_analise + e-mail ao RH ─────┼──► Google Sheets (analises)
+└────────────────────────────────────┘
+                                          │  GET /webhook/acolhe-dados
+                                          ▼
+                              Painel do RH (React + Recharts)
+```
+
+**Decisões de produto**
+* **Só responde pelo manual e cita a seção.** Resposta inventada sobre benefício ou prazo vira problema real para a pessoa e para o RH.
+* **Assuntos sensíveis sempre vão para uma pessoa.** Assédio, saúde, gravidez, renovação de contrato: a IA acolhe e aciona, não decide.
+* **O registro é um passo fixo, não uma ferramenta do agente.** O histórico precisa ser completo para o relatório e para auditoria.
+* **O painel é público, então perguntas sensíveis aparecem só como contagem.** O texto nunca sai da planilha.
+* **A chave da API fica só no n8n.** O front-end não tem nenhum segredo.
+
+## Tecnologias
+
+| Parte | Ferramenta |
+|---|---|
+| Agentes e automação | n8n (AI Agent, Code Tool, Gmail Tool, Google Sheets) |
+| Modelo | GPT-4o mini pelos Gateway credits do n8n (o plano gratuito do Gemini permite só 20 chamadas por dia, e o agente faz de 2 a 3 por pergunta) |
+| Interface e dashboard | React, Vite, Tailwind CSS, Recharts, publicado na Vercel |
+| Avaliação | Python (`requests`, `csv`) |
+| Dados | Google Sheets, JSON entre app e n8n |
+
+## Resultados
+
+Medido com o script `avaliacao/avaliar.py`, que envia 40 perguntas com gabarito ao agente e compara as respostas.
+
+| Métrica | v1 | v2 |
+|---|---|---|
+| Respondíveis com a seção certa (26) | _a medir_ | |
+| Sensíveis encaminhadas (5, meta 100%) | | |
+| Fora da base encaminhadas (5) | | |
+| Respostas inventadas (meta zero) | | |
+| Manipulação recusada (1) | | |
+
+**Teste de tempo** com _n_ voluntários: achar 5 respostas no manual em PDF levou _X_ min em média; perguntando ao Acolhe, _Y_ min.
+
+**O que mudou da v1 para a v2:** _preencher depois dos testes_.
+
+## Limites
+
+* As 40 perguntas foram escritas para o teste e o teste de tempo usou poucos voluntários. Isso mede o comportamento do agente, não economia comprovada numa empresa.
+* Os webhooks são públicos, sem login. Numa empresa, o chat ficaria atrás do login corporativo.
+* O manual cabe inteiro em 18 seções. Um manual grande pediria busca semântica (base vetorial) no lugar da ferramenta por número de seção.
+
+## Estrutura
+
+```
+app/          interface e dashboard (React)
+n8n/          fluxos exportados (JSON) e o script que os gera
+prompts/      prompts dos dois agentes, com o motivo de cada regra
+avaliacao/    avaliar.py e relatórios de cada versão
+dados/        manual fictício e perguntas de teste com gabarito
+IA.md         como a IA foi usada para construir o projeto
+```
+
+## Como rodar
+
+**1. n8n.** Importe os três arquivos de `n8n/` (menu *Import from file*). Em cada fluxo, troque `COLE_AQUI_O_ID_DA_PLANILHA` e `COLE_AQUI_O_EMAIL_DO_RH`, escolha as credenciais (modelo: Gateway credits ou uma chave OpenAI; Google Sheets; Gmail) e ative o fluxo.
+
+A planilha precisa de duas abas:
+* `registros`: `data | pergunta | resposta | fontes | tema | status | motivo_encaminhamento | resumo_para_rh`
+* `analises`: `data | total | respondidas | encaminhadas | analise_json`
+
+**2. App.**
+```bash
+cd app
+cp .env.example .env   # preencha VITE_N8N_WEBHOOK_BASE
+npm install
+npm run dev
+```
+Na Vercel: *Root Directory* `app` e a mesma variável de ambiente.
+
+**3. Avaliação.**
+```bash
+cd avaliacao
+pip install -r requirements.txt
+python avaliar.py --url https://SEU-N8N/webhook/acolhe --versao v1
+```
+
+---
+Projeto de portfólio de Anna Julia, construído em novembro de 2026.

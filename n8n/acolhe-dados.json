@@ -1,0 +1,186 @@
+{
+  "name": "Acolhe: dados do dashboard",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "acolhe-dados",
+        "responseMode": "responseNode",
+        "options": {
+          "allowedOrigins": "*"
+        }
+      },
+      "id": "cc5120e8-0f3b-4116-9412-fffcd5537db3",
+      "name": "pedir_dados",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "c9a26d71-e255-46a3-8bad-1f8f8ddc829c"
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1h2zhqhxczAULQW2Il0lI8px0kq4rNmXv7SCHZSnXoMY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "registros",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "c15c0441-1b3b-4c26-81eb-630ed12896c4",
+      "name": "ler_registros",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        240,
+        0
+      ],
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Junta os registros num único objeto e protege o que é sensível.\n// O dashboard é público: perguntas sensíveis aparecem só como contagem.\nconst registros = $input.all()\n  .map((item) => item.json)\n  .filter((l) => l.pergunta)\n  .map((l) => ({\n    data: l.data,\n    tema: l.tema,\n    status: l.status,\n    motivo_encaminhamento: l.motivo_encaminhamento || null,\n    fontes: l.fontes || '',\n    pergunta: l.motivo_encaminhamento === 'sensivel' ? null : l.pergunta,\n  }));\n\nreturn [{ json: { registros } }];\n"
+      },
+      "id": "c2a28f0f-b372-4ea8-bbd1-5fb115466ae3",
+      "name": "juntar_registros",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "read",
+        "documentId": {
+          "__rl": true,
+          "value": "1h2zhqhxczAULQW2Il0lI8px0kq4rNmXv7SCHZSnXoMY",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "analises",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "bf844c1f-5492-4706-b7a5-8a31b66ee532",
+      "name": "ler_analises",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        720,
+        0
+      ],
+      "alwaysOutputData": true,
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "// Monta a resposta final: registros + análise mais recente.\nconst { registros } = $('juntar_registros').first().json;\n\nconst linhas = $input.all().map((i) => i.json).filter((l) => l.analise_json);\nconst ultima = linhas[linhas.length - 1];\n\nlet analise = null;\nif (ultima) {\n  try {\n    analise = { data: ultima.data, ...JSON.parse(ultima.analise_json) };\n  } catch (erro) {\n    analise = null;\n  }\n}\n\nreturn [{ json: { atualizado_em: new Date().toISOString(), registros, analise } }];\n"
+      },
+      "id": "95d245c6-05e3-4408-af52-62a8f8d82065",
+      "name": "montar_resposta",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        0
+      ]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              }
+            ]
+          }
+        }
+      },
+      "id": "84c5088a-7fdc-4e31-bcb1-7d257babe214",
+      "name": "responder_dashboard",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        1200,
+        0
+      ]
+    }
+  ],
+  "connections": {
+    "pedir_dados": {
+      "main": [
+        [
+          {
+            "node": "ler_registros",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ler_registros": {
+      "main": [
+        [
+          {
+            "node": "juntar_registros",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "juntar_registros": {
+      "main": [
+        [
+          {
+            "node": "ler_analises",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "ler_analises": {
+      "main": [
+        [
+          {
+            "node": "montar_resposta",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "montar_resposta": {
+      "main": [
+        [
+          {
+            "node": "responder_dashboard",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}
