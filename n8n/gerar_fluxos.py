@@ -251,7 +251,7 @@ const perguntas = linhas.map((l) => ({
 return [{ json: { numeros, perguntas } }];
 """
 
-    codigo_interpretar = r"""// Lê o JSON do analista e prepara a linha da aba analises.
+    codigo_interpretar = r"""// Lê o JSON do analista e prepara a linha da aba analises e o e-mail do RH.
 const bruto = String($json.text || $json.output || '').trim();
 const { numeros } = $('calcular_numeros').first().json;
 
@@ -263,21 +263,65 @@ try {
   analise = { resumo: bruto.slice(0, 500), temas_frequentes: [], lacunas: [], melhorias: [] };
 }
 
-// Corpo do e-mail para o RH, em HTML simples.
-const esc = (t) => String(t || '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
-const lista = (itens) => itens.length ? '<ul>' + itens.map((i) => '<li>' + i + '</li>').join('') + '</ul>' : '<p>Nenhuma.</p>';
-const email_html = [
-  '<h2>Acolhe: relatório da semana</h2>',
-  '<p><b>' + numeros.total + '</b> perguntas, <b>' + numeros.respondidas + '</b> respondidas pelo manual e <b>' + numeros.encaminhadas + '</b> encaminhadas ao RH.</p>',
-  '<p>' + esc(analise.resumo) + '</p>',
-  '<h3>Temas mais frequentes</h3>',
-  lista((analise.temas_frequentes || []).map((t) => '<b>' + esc(t.tema) + '</b> (' + esc(t.quantidade) + '): ' + esc(t.observacao))),
-  '<h3>Lacunas no manual</h3>',
-  lista((analise.lacunas || []).map((l) => '<b>' + esc(l.assunto) + '</b>: ' + esc(l.sugestao))),
-  '<h3>Sugestões para o onboarding</h3>',
-  lista((analise.melhorias || []).map(esc)),
-  '<p style="color:#777">Gerado automaticamente pelo agente analista do Acolhe. Perguntas sensíveis entram só na contagem.</p>',
-].join('');
+// ---------- e-mail em HTML (estilos inline, para funcionar no Gmail)
+const esc = (t) => String(t ?? '').replace(/[&<>]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;' }[c]));
+const LIL = '#7c5cbf', LIL2 = '#efe9fb', AQ = '#14b8c8', AQ2 = '#dff7f9', INK = '#24212e', SOFT = '#6b6678', LINE = '#e6e1ef';
+const NOMES = { admissao: 'Admissão', primeira_semana: 'Primeira semana', jornada_ponto: 'Jornada e ponto', provas: 'Provas', bolsa: 'Bolsa', transporte: 'Transporte', beneficios: 'Benefícios', recesso: 'Recesso', faltas_atestados: 'Faltas e atestados', hibrido_equipamento: 'Híbrido e equipamento', acessos_ti: 'Acessos e TI', avaliacao: 'Avaliação', efetivacao: 'Efetivação', conduta: 'Conduta', etica_sensivel: 'Ética e sensíveis', desligamento: 'Fim do estágio', outros: 'Outros', pedido_pessoal: 'Pedido pessoal' };
+const pct = (a, b) => (b ? Math.round((a / b) * 100) : 0);
+const hoje = new Date().toLocaleDateString('pt-BR', { timeZone: 'America/Sao_Paulo' });
+
+const kpi = (rotulo, valor, detalhe, fundo, cor) =>
+  `<td width="25%" style="padding:6px"><div style="background:${fundo};border-radius:14px;padding:14px 16px;border:1px solid ${LINE}">
+   <div style="font-size:12px;color:${cor === '#fff' ? '#ece5fb' : SOFT}">${rotulo}</div>
+   <div style="font-size:30px;font-weight:700;color:${cor};margin-top:2px">${valor}</div>
+   <div style="font-size:11px;color:${cor === '#fff' ? '#ece5fb' : SOFT}">${detalhe}</div></div></td>`;
+
+const porTema = Object.entries(numeros.por_tema || {}).sort((a, b) => b[1] - a[1]).slice(0, 8);
+const max = porTema.length ? porTema[0][1] : 1;
+const barras = porTema.map(([t, n]) =>
+  `<tr><td style="font-size:13px;color:${SOFT};padding:4px 10px 4px 0;white-space:nowrap;text-align:right" width="150">${esc(NOMES[t] || t)}</td>
+   <td style="padding:4px 0"><div style="background:${LIL};height:12px;border-radius:3px;width:${Math.max(4, (n / max) * 100)}%"></div></td>
+   <td style="font-size:13px;font-weight:700;padding-left:8px" width="30">${n}</td></tr>`).join('');
+
+const motivos = numeros.por_motivo || {};
+const linhaMotivo = (rotulo, n) =>
+  `<tr><td style="font-size:13px;padding:5px 0">${rotulo}</td><td style="font-size:13px;font-weight:700;text-align:right">${n || 0}</td></tr>
+   <tr><td colspan="2"><div style="background:${LIL2};height:7px;border-radius:9px"><div style="background:${AQ};height:7px;border-radius:9px;width:${pct(n || 0, numeros.encaminhadas || 1)}%"></div></div></td></tr>`;
+
+const temas = (analise.temas_frequentes || []).map((t) =>
+  `<li style="margin:6px 0"><b>${esc(NOMES[t.tema] || t.tema)}</b> (${esc(t.quantidade)}): ${esc(t.observacao)}</li>`).join('');
+const lacunas = (analise.lacunas || []).map((l) =>
+  `<div style="background:${AQ2};border:1px solid #bdeef3;border-radius:12px;padding:12px 14px;margin-top:10px">
+   <div style="font-weight:700;color:#0b6e78">${esc(l.assunto)}</div>
+   ${(l.exemplos || []).length ? `<div style="font-size:12px;color:${SOFT};margin:5px 0">Ex.: "${(l.exemplos || []).map(esc).join('", "')}"</div>` : ''}
+   <div style="font-size:13px">${esc(l.sugestao)}</div></div>`).join('') || `<p style="font-size:13px;color:${SOFT}">Nenhuma lacuna nesta semana.</p>`;
+const melhorias = (analise.melhorias || []).map((m) => `<li style="margin:6px 0">${esc(m)}</li>`).join('');
+
+const card = (titulo, corpo) =>
+  `<div style="background:#fff;border:1px solid ${LINE};border-radius:16px;padding:18px 20px;margin-top:14px">
+   <div style="font-size:15px;font-weight:700;margin-bottom:10px">${titulo}</div>${corpo}</div>`;
+
+const email_html = `<div style="background:#f7f5fb;padding:24px 0;font-family:Arial,Helvetica,sans-serif;color:${INK}">
+<table align="center" width="640" cellpadding="0" cellspacing="0" style="max-width:640px;width:100%"><tr><td style="padding:0 16px">
+ <div style="border-bottom:3px solid ${AQ};padding-bottom:14px">
+  <div style="font-size:12px;font-weight:700;color:${LIL};letter-spacing:.5px">ACOLHE · RELATÓRIO SEMANAL DO RH</div>
+  <div style="font-size:24px;font-weight:700;color:${LIL};margin-top:4px">Dúvidas dos estagiários na semana</div>
+  <div style="font-size:13px;color:${SOFT};margin-top:4px">Lumina Tecnologia (empresa fictícia) · gerado em ${hoje} pelo agente analista</div>
+ </div>
+ <table width="100%" cellpadding="0" cellspacing="0" style="margin-top:12px"><tr>
+  ${kpi('Perguntas', numeros.total, 'nos últimos 7 dias', LIL, '#fff')}
+  ${kpi('Respondidas', pct(numeros.respondidas, numeros.total) + '%', numeros.respondidas + ' pelo manual', '#fff', INK)}
+  ${kpi('Encaminhadas', numeros.encaminhadas, 'com e-mail ao RH', AQ2, INK)}
+  ${kpi('Sensíveis', motivos.sensivel || 0, 'texto não incluído', '#fff', INK)}
+ </tr></table>
+ ${card('Resumo da semana', `<div style="border-left:4px solid ${LIL};background:${LIL2};border-radius:0 10px 10px 0;padding:12px 14px;font-size:14px;line-height:1.55">${esc(analise.resumo)}</div>`)}
+ ${card('Perguntas por tema', `<table width="100%" cellpadding="0" cellspacing="0">${barras}</table>`)}
+ ${card('Por que foram encaminhadas', `<table width="100%" cellpadding="0" cellspacing="0">${linhaMotivo('Fora do manual', motivos.fora_da_base)}${linhaMotivo('Assunto sensível', motivos.sensivel)}${linhaMotivo('Pedido pessoal', motivos.pedido_pessoal)}</table>`)}
+ ${card('Temas em destaque', `<ul style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.5">${temas}</ul>`)}
+ ${card('Lacunas do manual', `<div style="font-size:12px;color:${SOFT}">Só entram perguntas que o manual não respondeu.</div>${lacunas}`)}
+ ${card('Sugestões para o onboarding', `<ul style="margin:0;padding-left:18px;font-size:13.5px;line-height:1.5">${melhorias}</ul>`)}
+ <p style="font-size:11px;color:${SOFT};line-height:1.5;margin-top:16px">Números calculados por código; resumo, lacunas e sugestões escritos pela IA. Perguntas sensíveis entram só na contagem: o texto delas não vai para o modelo nem para este e-mail. Enviado automaticamente pelo Acolhe.</p>
+</td></tr></table></div>`;
 
 return [{
   json: {
@@ -340,7 +384,7 @@ return [{
 
     nos.append(no("enviar_relatorio_rh", "n8n-nodes-base.gmail", 2.1, [1460, 100], {
         "sendTo": EMAIL_RH,
-        "subject": "=[Acolhe] Relatório semanal: {{ $('interpretar_analise').item.json.total }} perguntas",
+        "subject": "=Acolhe | Relatório semanal do RH: {{ $('interpretar_analise').item.json.total }} perguntas",
         "emailType": "html",
         "message": "={{ $('interpretar_analise').item.json.email_html }}",
         "options": {"appendAttribution": False},
