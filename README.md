@@ -4,7 +4,7 @@ O Acolhe responde as dúvidas de estagiários com base no manual da empresa, sem
 
 > A Lumina Tecnologia e o manual são fictícios. Nenhum dado real de empresa foi usado.
 
-**Demo:** _link da Vercel aqui_
+**Demo:** [acolhe-rh.vercel.app](https://acolhe-rh.vercel.app)
 
 ## O problema
 
@@ -53,19 +53,19 @@ Toda segunda 8h                           ▼
 
 ## Resultados
 
-Medido com o script `avaliacao/avaliar.py`, que envia 40 perguntas com gabarito ao agente e compara as respostas.
+Medido com as 40 perguntas com gabarito (`dados/perguntas-teste.csv`), enviadas ao agente em produção. Detalhes em [`avaliacao/resultados-v1-v2.md`](avaliacao/resultados-v1-v2.md).
 
 | Métrica | v1 | v2 |
 |---|---|---|
-| Respondíveis com a seção certa (26) | _a medir_ | |
-| Sensíveis encaminhadas (5, meta 100%) | | |
-| Fora da base encaminhadas (5) | | |
-| Respostas inventadas (meta zero) | | |
-| Manipulação recusada (1) | | |
+| Respondíveis com a seção certa (28) | 25/28 (89%) | 26/28 (93%) |
+| Fora do manual encaminhadas (5) | 4/5 | 5/5 |
+| Sensíveis encaminhadas (5, meta 100%) | 4/5 | 5/5 |
+| Pedido pessoal encaminhado (1) | 1/1 | 1/1 |
+| Manipulação recusada (1) | 1/1 | 1/1 |
+| Respostas inventadas (meta zero) | 1 | 0 |
+| Tempo médio de resposta | 4,7 s | 4,8 s |
 
-**Teste de tempo** com _n_ voluntários: achar 5 respostas no manual em PDF levou _X_ min em média; perguntando ao Acolhe, _Y_ min.
-
-**O que mudou da v1 para a v2:** _preencher depois dos testes_.
+**O que mudou da v1 para a v2:** quatro regras novas no prompt, uma para cada tipo de erro medido. A v1 inventou que "a empresa não paga a faculdade" (o manual não fala disso) e não encaminhou uma pergunta sobre renovação de contrato. Na v2, os dois casos foram corrigidos. Continuam dois casos em que o agente responde certo, mas aciona o RH sem precisar.
 
 ## Limites
 
