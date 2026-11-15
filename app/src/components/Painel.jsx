@@ -4,9 +4,10 @@ import {
 } from 'recharts'
 import { buscarDados, configurado, NOMES_MOTIVOS, NOMES_TEMAS } from '../api.js'
 
-const COR_1 = '#2a78d6'
-const COR_2 = '#eb6834'
-const EIXO = { fontSize: 12, fill: '#5c574f' }
+const COR_1 = '#7c6cf0'
+const COR_2 = '#e0a12e'
+const GRADE = '#efedf4'
+const EIXO = { fontSize: 12, fill: '#6b6876' }
 
 export default function Painel() {
   const [dados, setDados] = useState(null)
@@ -36,24 +37,24 @@ export default function Painel() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-end gap-3">
         <div>
-          <h1 className="font-display text-3xl text-floresta">Painel do RH</h1>
-          <p className="text-sm text-tinta-suave">
+          <h1 className="text-4xl font-light tracking-tight">Painel do RH</h1>
+          <p className="mt-1 text-sm text-tinta-suave">
             O que os estagiários perguntaram ao Acolhe e o que o manual ainda não cobre.
           </p>
         </div>
         <button
           onClick={carregar}
           disabled={carregando || !configurado}
-          className="ml-auto rounded-full border border-linha bg-white px-4 py-2 text-sm hover:border-floresta disabled:opacity-50"
+          className="ml-auto rounded-full bg-grafite px-5 py-2.5 text-sm font-medium text-white hover:bg-grafite-suave disabled:opacity-50"
         >
           {carregando ? 'Atualizando…' : 'Atualizar'}
         </button>
       </div>
 
-      {erro && <p className="rounded-xl bg-mel-claro px-4 py-3 text-sm">{erro}</p>}
+      {erro && <p className="rounded-2xl bg-manteiga px-4 py-3 text-sm">{erro}</p>}
 
       {dados && numeros.total === 0 && (
-        <p className="rounded-2xl border border-dashed border-linha bg-white px-6 py-10 text-center text-tinta-suave">
+        <p className="rounded-3xl border-2 border-dashed border-linha bg-white/60 px-6 py-10 text-center text-tinta-suave">
           Ainda não há perguntas registradas. Faça uma pergunta na aba de conversa e atualize o painel.
         </p>
       )}
@@ -61,16 +62,18 @@ export default function Painel() {
       {numeros.total > 0 && (
         <>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            <Indicador rotulo="Perguntas recebidas" valor={numeros.total} />
+            <Indicador rotulo="Perguntas recebidas" valor={numeros.total} cor="lavanda" />
             <Indicador
               rotulo="Respondidas pelo manual"
               valor={pct(numeros.respondidas, numeros.total)}
               detalhe={`${numeros.respondidas} de ${numeros.total}`}
+              cor="manteiga"
             />
             <Indicador
               rotulo="Encaminhadas ao RH"
               valor={numeros.encaminhadas}
               detalhe={pct(numeros.encaminhadas, numeros.total) + ' do total'}
+              cor="grafite"
             />
             <Indicador
               rotulo="Assuntos sensíveis"
@@ -83,11 +86,11 @@ export default function Painel() {
             <Cartao titulo="Perguntas por tema" className="lg:col-span-3">
               <ResponsiveContainer width="100%" height={Math.max(220, numeros.porTema.length * 34)}>
                 <BarChart data={numeros.porTema} layout="vertical" margin={{ left: 8, right: 16 }}>
-                  <CartesianGrid horizontal={false} stroke="#eee7db" />
+                  <CartesianGrid horizontal={false} stroke={GRADE} />
                   <XAxis type="number" allowDecimals={false} tick={EIXO} axisLine={false} tickLine={false} />
                   <YAxis type="category" dataKey="nome" width={140} tick={EIXO} axisLine={false} tickLine={false} />
-                  <Tooltip cursor={{ fill: '#f1ebe0' }} content={<Dica />} />
-                  <Bar isAnimationActive={false} dataKey="quantidade" name="Perguntas" fill={COR_1} radius={[0, 4, 4, 0]} barSize={18} />
+                  <Tooltip cursor={{ fill: '#f3f1f7' }} content={<Dica />} />
+                  <Bar isAnimationActive={false} dataKey="quantidade" name="Perguntas" fill={COR_1} radius={[0, 8, 8, 0]} barSize={16} />
                 </BarChart>
               </ResponsiveContainer>
               <TabelaOculta
@@ -109,9 +112,9 @@ export default function Painel() {
                           <span>{nome}</span>
                           <span className="font-medium">{qtd}</span>
                         </div>
-                        <div className="mt-1.5 h-2 rounded-full bg-areia">
+                        <div className="mt-1.5 h-2.5 rounded-full bg-fundo">
                           <div
-                            className="h-2 rounded-full"
+                            className="h-2.5 rounded-full"
                             style={{ width: `${(qtd / numeros.encaminhadas) * 100}%`, background: COR_2 }}
                           />
                         </div>
@@ -129,23 +132,30 @@ export default function Painel() {
           <Cartao titulo="Perguntas por dia">
             <ResponsiveContainer width="100%" height={240}>
               <BarChart data={numeros.porDia} margin={{ left: -16, right: 8 }}>
-                <CartesianGrid vertical={false} stroke="#eee7db" />
+                <CartesianGrid vertical={false} stroke={GRADE} />
                 <XAxis dataKey="dia" tick={EIXO} axisLine={false} tickLine={false} />
                 <YAxis allowDecimals={false} tick={EIXO} axisLine={false} tickLine={false} />
-                <Tooltip cursor={{ fill: '#f1ebe0' }} content={<Dica />} />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} formatter={(v) => <span style={{ color: "#5c574f" }}>{v}</span>} />
+                <Tooltip cursor={{ fill: '#f3f1f7' }} content={<Dica />} />
+                <Legend iconType="circle" wrapperStyle={{ fontSize: 12 }} formatter={(v) => <span style={{ color: "#6b6876" }}>{v}</span>} />
                 <Bar isAnimationActive={false} dataKey="respondidas" name="Respondidas" stackId="a" fill={COR_1} stroke="#fff" strokeWidth={2} maxBarSize={40} />
-                <Bar isAnimationActive={false} dataKey="encaminhadas" name="Encaminhadas" stackId="a" fill={COR_2} stroke="#fff" strokeWidth={2} radius={[4, 4, 0, 0]} maxBarSize={40} />
+                <Bar isAnimationActive={false} dataKey="encaminhadas" name="Encaminhadas" stackId="a" fill={COR_2} stroke="#fff" strokeWidth={2} radius={[6, 6, 0, 0]} maxBarSize={40} />
               </BarChart>
             </ResponsiveContainer>
+            <TabelaOculta
+              colunas={['Dia', 'Respondidas', 'Encaminhadas']}
+              linhas={numeros.porDia.map((d) => [d.dia, d.respondidas, d.encaminhadas])}
+            />
           </Cartao>
 
           <Analise analise={dados.analise} />
 
           <Cartao titulo="Últimas perguntas">
-            <ul className="divide-y divide-linha">
+            <ul className="space-y-2">
               {numeros.recentes.map((r, i) => (
-                <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2.5 text-sm">
+                <li key={i} className="flex flex-wrap items-center gap-x-3 gap-y-1 rounded-2xl bg-nevoa px-3 py-2.5 text-sm">
+                  <span className={`grid h-8 w-8 shrink-0 place-items-center rounded-full ${r.status === 'encaminhada' ? 'bg-manteiga' : 'bg-lavanda'}`} aria-hidden="true">
+                    <svg viewBox="0 0 20 20" className="h-4 w-4"><path d="M4 5.5h12v7H9l-3.5 3v-3H4z" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round" /></svg>
+                  </span>
                   <span className="w-24 shrink-0 text-xs text-tinta-suave">{formatarData(r.data)}</span>
                   <span className={`flex-1 min-w-[12rem] ${r.pergunta ? '' : 'italic text-tinta-suave'}`}>
                     {r.pergunta || 'Assunto sensível (conteúdo oculto)'}
@@ -221,10 +231,10 @@ function Analise({ analise }) {
 
       {analise.lacunas?.length > 0 && (
         <div className="mt-5">
-          <h3 className="text-sm font-bold text-floresta">Lacunas no manual</h3>
+          <h3 className="text-sm font-semibold">Lacunas no manual</h3>
           <ul className="mt-2 grid sm:grid-cols-2 gap-3">
             {analise.lacunas.map((l, i) => (
-              <li key={i} className="rounded-xl border border-linha bg-creme p-3 text-sm">
+              <li key={i} className="rounded-2xl bg-lavanda-clara p-4 text-sm">
                 <p className="font-medium">{l.assunto}</p>
                 {l.exemplos?.length > 0 && (
                   <p className="mt-1 text-xs text-tinta-suave">Ex.: “{l.exemplos.join('”, “')}”</p>
@@ -238,7 +248,7 @@ function Analise({ analise }) {
 
       {analise.melhorias?.length > 0 && (
         <div className="mt-5">
-          <h3 className="text-sm font-bold text-floresta">Sugestões para o onboarding</h3>
+          <h3 className="text-sm font-semibold">Sugestões para o onboarding</h3>
           <ul className="mt-2 list-disc pl-5 space-y-1 text-sm">
             {analise.melhorias.map((m, i) => <li key={i}>{m}</li>)}
           </ul>
@@ -250,9 +260,9 @@ function Analise({ analise }) {
 
 function Cartao({ titulo, extra, className = '', children }) {
   return (
-    <section className={`rounded-2xl border border-linha bg-white p-5 ${className}`}>
+    <section className={`rounded-3xl bg-white p-5 sm:p-6 shadow-sm ${className}`}>
       <div className="mb-4 flex items-baseline gap-3">
-        <h2 className="font-medium">{titulo}</h2>
+        <h2 className="font-semibold">{titulo}</h2>
         {extra && <div className="ml-auto">{extra}</div>}
       </div>
       {children}
@@ -260,24 +270,33 @@ function Cartao({ titulo, extra, className = '', children }) {
   )
 }
 
-function Indicador({ rotulo, valor, detalhe }) {
+const CORES_INDICADOR = {
+  lavanda: 'bg-lavanda text-tinta',
+  manteiga: 'bg-manteiga text-tinta',
+  grafite: 'bg-grafite text-white',
+  branco: 'bg-white text-tinta',
+}
+
+function Indicador({ rotulo, valor, detalhe, cor = 'branco' }) {
   return (
-    <div className="rounded-2xl border border-linha bg-white p-4">
-      <p className="text-xs text-tinta-suave">{rotulo}</p>
-      <p className="mt-1 font-display text-3xl text-tinta">{valor}</p>
-      {detalhe && <p className="mt-0.5 text-xs text-tinta-suave">{detalhe}</p>}
+    <div className={`flex min-h-[8rem] flex-col justify-between rounded-3xl p-5 shadow-sm ${CORES_INDICADOR[cor]}`}>
+      <p className="text-sm font-medium opacity-80">{rotulo}</p>
+      <div>
+        <p className="text-4xl font-light tracking-tight">{valor}</p>
+        {detalhe && <p className="mt-0.5 text-xs opacity-70">{detalhe}</p>}
+      </div>
     </div>
   )
 }
 
 function Etiqueta({ status }) {
   const estilos = {
-    respondida: 'bg-[#e3eefb] text-[#1c5cab]',
-    encaminhada: 'bg-[#fde6dc] text-[#9a3a12]',
+    respondida: 'bg-lavanda-clara text-[#4b3fb5]',
+    encaminhada: 'bg-manteiga text-tinta',
   }
   const nomes = { respondida: 'Respondida', encaminhada: 'Encaminhada' }
   return (
-    <span className={`rounded-full px-2.5 py-0.5 text-xs font-medium ${estilos[status] || 'bg-areia text-tinta-suave'}`}>
+    <span className={`rounded-full px-3 py-1 text-xs font-medium ${estilos[status] || 'bg-fundo text-tinta-suave'}`}>
       {nomes[status] || 'Erro'}
     </span>
   )
@@ -286,7 +305,7 @@ function Etiqueta({ status }) {
 function Dica({ active, payload, label }) {
   if (!active || !payload?.length) return null
   return (
-    <div className="rounded-lg border border-linha bg-white px-3 py-2 text-xs shadow-sm">
+    <div className="rounded-xl bg-white px-3 py-2 text-xs shadow-md">
       <p className="font-medium text-tinta">{label || payload[0].payload.nome}</p>
       {payload.map((p) => (
         <p key={p.dataKey} className="mt-0.5 flex items-center gap-1.5 text-tinta-suave">

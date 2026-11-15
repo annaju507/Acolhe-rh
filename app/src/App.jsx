@@ -4,7 +4,7 @@ import Painel from './components/Painel.jsx'
 import { configurado } from './api.js'
 
 const ABAS = [
-  { id: 'chat', rotulo: 'Conversar com o Acolhe' },
+  { id: 'chat', rotulo: 'Conversar' },
   { id: 'painel', rotulo: 'Painel do RH' },
 ]
 
@@ -13,25 +13,25 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col">
-      <header className="border-b border-linha bg-creme/90 backdrop-blur sticky top-0 z-10">
-        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-3 flex flex-wrap items-center gap-x-6 gap-y-3">
-          <div className="flex items-center gap-3">
-            <img src="/favicon.svg" alt="" className="h-9 w-9" />
+      <header className="sticky top-0 z-10 bg-fundo/70 backdrop-blur">
+        <div className="mx-auto max-w-5xl px-4 sm:px-6 py-4 flex flex-wrap items-center gap-x-6 gap-y-3">
+          <div className="flex items-center gap-2.5 rounded-full bg-white py-1.5 pl-1.5 pr-4 shadow-sm">
+            <img src="/avatar-acolhe.png" alt="" className="h-8 w-8 rounded-full" />
             <div className="leading-tight">
-              <p className="font-display text-xl text-floresta">Acolhe</p>
-              <p className="text-xs text-tinta-suave">Onboarding de estagiários · Lumina Tecnologia</p>
+              <p className="text-sm font-semibold">Acolhe</p>
+              <p className="text-[11px] text-tinta-suave">Lumina Tecnologia</p>
             </div>
           </div>
 
-          <nav className="ml-auto flex rounded-full bg-areia p-1" aria-label="Seções">
+          <nav className="ml-auto flex rounded-full bg-white p-1 shadow-sm" aria-label="Seções">
             {ABAS.map((item) => (
               <button
                 key={item.id}
                 onClick={() => setAba(item.id)}
                 aria-current={aba === item.id ? 'page' : undefined}
-                className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
                   aba === item.id
-                    ? 'bg-floresta text-creme shadow-sm'
+                    ? 'bg-grafite text-white'
                     : 'text-tinta-suave hover:text-tinta'
                 }`}
               >
@@ -43,8 +43,8 @@ export default function App() {
       </header>
 
       {!configurado && (
-        <div className="mx-auto max-w-5xl w-full px-4 sm:px-6 pt-4">
-          <p className="rounded-xl border border-mel bg-mel-claro px-4 py-3 text-sm">
+        <div className="mx-auto max-w-5xl w-full px-4 sm:px-6 pt-2">
+          <p className="rounded-2xl bg-manteiga px-4 py-3 text-sm">
             Falta configurar o endereço do n8n. Crie o arquivo <code>.env</code> com{' '}
             <code>VITE_N8N_WEBHOOK_BASE</code> (veja o <code>.env.example</code>).
           </p>
@@ -55,8 +55,8 @@ export default function App() {
         {aba === 'chat' ? <Chat /> : <Painel />}
       </main>
 
-      <footer className="border-t border-linha">
-        <p className="mx-auto max-w-5xl px-4 sm:px-6 py-4 text-xs text-tinta-suave">
+      <footer>
+        <p className="mx-auto max-w-5xl px-4 sm:px-6 py-5 text-xs text-tinta-suave">
           Projeto de portfólio de Anna Julia. A Lumina Tecnologia e o manual são fictícios.
           As respostas são geradas por IA a partir do manual e podem conter erros.
         </p>

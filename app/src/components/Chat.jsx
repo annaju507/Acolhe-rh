@@ -2,34 +2,32 @@ import { useEffect, useRef, useState } from 'react'
 import { perguntar, configurado } from '../api.js'
 
 const SUGESTOES = [
-  'Quanto é a bolsa e quando cai?',
-  'Estagiário tem férias?',
-  'esqueci de bater o ponto ontem e agora?',
-  'Tem estacionamento no escritório?',
+  { texto: 'Quanto é a bolsa e quando cai?', icone: 'carteira', estilo: 'bg-roxo text-tinta' },
+  { texto: 'Estagiário tem férias?', icone: 'sol', estilo: 'bg-menta text-tinta' },
+  { texto: 'esqueci de bater o ponto ontem e agora?', icone: 'relogio', estilo: 'bg-grafite text-white' },
+  { texto: 'Tem estacionamento no escritório?', icone: 'pino', estilo: 'bg-white text-tinta' },
 ]
 
-const BOAS_VINDAS = {
-  autor: 'acolhe',
-  resposta:
-    'Oi! Eu sou o Acolhe e respondo dúvidas sobre o seu estágio com base no Manual do Estagiário Lumina. Sempre mostro de qual seção veio a resposta. Se eu não souber, ou se o assunto for delicado, chamo uma pessoa do RH.',
-  fontes: [],
-}
+const INTRODUCAO =
+  'Oi! Sou o Acolhe e tiro suas dúvidas sobre o estágio com base no manual da Lumina. Se eu não souber, chamo alguém do RH.'
+
+const ERRO = 'Não consegui me conectar agora. Tente de novo em alguns segundos ou escreva para rh@lumina.exemplo.'
 
 export default function Chat() {
-  const [mensagens, setMensagens] = useState([BOAS_VINDAS])
+  const [mensagens, setMensagens] = useState([])
   const [texto, setTexto] = useState('')
   const [carregando, setCarregando] = useState(false)
   const fimRef = useRef(null)
 
   useEffect(() => {
-    fimRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
+    if (mensagens.length) fimRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [mensagens, carregando])
 
   async function enviar(pergunta) {
     const limpa = pergunta.trim()
     if (!limpa || carregando) return
 
-    setMensagens((atual) => [...atual, { autor: 'pessoa', texto: limpa }])
+    setMensagens((atual) => [...atual, { autor: 'pessoa', texto: limpa, hora: agora() }])
     setTexto('')
     setCarregando(true)
 
@@ -37,53 +35,26 @@ export default function Chat() {
       const dados = await perguntar(limpa)
       setMensagens((atual) => [...atual, { autor: 'acolhe', ...dados }])
     } catch {
-      setMensagens((atual) => [
-        ...atual,
-        {
-          autor: 'acolhe',
-          status: 'erro',
-          resposta: 'Não consegui me conectar agora. Tente de novo em alguns segundos ou escreva para rh@lumina.exemplo.',
-          fontes: [],
-        },
-      ])
+      setMensagens((atual) => [...atual, { autor: 'acolhe', status: 'erro', resposta: ERRO, fontes: [] }])
     } finally {
       setCarregando(false)
     }
   }
 
-  const soBoasVindas = mensagens.length === 1
+  const vazio = mensagens.length === 0
 
   return (
-    <section className="mx-auto flex max-w-3xl flex-col rounded-3xl border border-linha bg-white shadow-sm h-[calc(100vh-13rem)] min-h-[480px]">
-      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 space-y-4" aria-live="polite">
-        {mensagens.map((m, i) =>
-          m.autor === 'pessoa' ? <BalaoPessoa key={i} texto={m.texto} /> : <BalaoAcolhe key={i} {...m} />,
-        )}
-
-        {soBoasVindas && (
-          <div className="flex flex-wrap gap-2 pl-11">
-            {SUGESTOES.map((s) => (
-              <button
-                key={s}
-                onClick={() => enviar(s)}
-                disabled={!configurado}
-                className="rounded-full border border-linha bg-creme px-3 py-1.5 text-sm text-tinta-suave hover:border-floresta hover:text-floresta disabled:opacity-50 transition"
-              >
-                {s}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {carregando && (
-          <div className="flex items-center gap-3">
-            <Avatar />
-            <div className="flex gap-1 rounded-2xl rounded-tl-sm bg-areia px-4 py-3" aria-label="O Acolhe está consultando o manual">
-              <span className="ponto h-2 w-2 rounded-full bg-floresta" />
-              <span className="ponto h-2 w-2 rounded-full bg-floresta" />
-              <span className="ponto h-2 w-2 rounded-full bg-floresta" />
-            </div>
-            <span className="text-xs text-tinta-suave">consultando o manual…</span>
+    <section className="mx-auto flex max-w-3xl flex-col overflow-hidden rounded-[2rem] border border-white bg-nevoa shadow-sm h-[calc(100vh-13rem)] min-h-[520px]">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6" aria-live="polite">
+        {vazio ? (
+          <BoasVindas onEscolher={enviar} />
+        ) : (
+          <div className="space-y-5">
+            <p className="mx-auto w-fit rounded-full bg-white px-4 py-1.5 text-xs font-medium shadow-sm">Hoje</p>
+            {mensagens.map((m, i) =>
+              m.autor === 'pessoa' ? <BalaoPessoa key={i} {...m} /> : <BalaoAcolhe key={i} {...m} />,
+            )}
+            {carregando && <Digitando />}
           </div>
         )}
         <div ref={fimRef} />
@@ -94,69 +65,132 @@ export default function Chat() {
           e.preventDefault()
           enviar(texto)
         }}
-        className="border-t border-linha p-3 sm:p-4 flex gap-2"
+        className="p-3 sm:p-4"
       >
-        <label htmlFor="pergunta" className="sr-only">Sua dúvida</label>
-        <input
-          id="pergunta"
-          value={texto}
-          onChange={(e) => setTexto(e.target.value)}
-          placeholder="Escreva sua dúvida sobre o estágio"
-          maxLength={500}
-          disabled={!configurado}
-          className="flex-1 rounded-full border border-linha bg-creme px-4 py-2.5 text-sm outline-none focus:border-floresta focus:ring-2 focus:ring-floresta/20"
-        />
-        <button
-          type="submit"
-          disabled={!texto.trim() || carregando || !configurado}
-          className="rounded-full bg-floresta px-5 py-2.5 text-sm font-medium text-creme hover:bg-floresta-escura disabled:opacity-40 transition"
-        >
-          Enviar
-        </button>
+        <div className="flex items-center gap-2 rounded-full bg-white p-1.5 pl-5 shadow-sm focus-within:ring-2 focus-within:ring-lavanda-forte/30">
+          <label htmlFor="pergunta" className="sr-only">Sua dúvida</label>
+          <input
+            id="pergunta"
+            value={texto}
+            onChange={(e) => setTexto(e.target.value)}
+            placeholder="Escreva sua dúvida sobre o estágio…"
+            maxLength={500}
+            disabled={!configurado}
+            className="flex-1 min-w-0 bg-transparent py-2 text-sm outline-none placeholder:text-tinta-suave disabled:cursor-not-allowed"
+          />
+          <button
+            type="submit"
+            aria-label="Enviar"
+            disabled={!texto.trim() || carregando || !configurado}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-lavanda text-tinta hover:bg-lavanda-forte hover:text-white disabled:opacity-40 disabled:hover:bg-lavanda disabled:hover:text-tinta transition"
+          >
+            <svg viewBox="0 0 20 20" className="h-5 w-5" aria-hidden="true">
+              <path d="M10 16V4M4.5 9.5 10 4l5.5 5.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+        </div>
       </form>
     </section>
   )
 }
 
-function Avatar() {
-  return <img src="/favicon.svg" alt="" className="h-8 w-8 shrink-0 self-start" />
+function BoasVindas({ onEscolher }) {
+  return (
+    <div className="space-y-3">
+      <BalaoAcolhe resposta={INTRODUCAO} />
+      <div className="flex flex-wrap gap-2 pl-8">
+        {SUGESTOES.map((s) => (
+          <button
+            key={s.texto}
+            onClick={() => onEscolher(s.texto)}
+            disabled={!configurado}
+            className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm shadow-sm transition hover:-translate-y-0.5 hover:shadow disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:translate-y-0 ${s.estilo}`}
+          >
+            <Icone nome={s.icone} />
+            {s.texto}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
 }
 
-function BalaoPessoa({ texto }) {
+function Icone({ nome }) {
+  const p = { fill: 'none', stroke: 'currentColor', strokeWidth: 1.7, strokeLinecap: 'round', strokeLinejoin: 'round' }
+  const formas = {
+    carteira: <><rect x="3" y="6" width="14" height="10" rx="2.5" {...p} /><path d="M3 9h14M13 12.5h1.5" {...p} /></>,
+    sol: <><circle cx="10" cy="10" r="3.2" {...p} /><path d="M10 2.5v1.8M10 15.7v1.8M2.5 10h1.8M15.7 10h1.8M4.7 4.7l1.3 1.3M14 14l1.3 1.3M4.7 15.3 6 14M14 6l1.3-1.3" {...p} /></>,
+    relogio: <><circle cx="10" cy="10" r="7" {...p} /><path d="M10 6v4l2.5 2" {...p} /></>,
+    pino: <><path d="M10 17s5-4.6 5-8.5a5 5 0 0 0-10 0C5 12.4 10 17 10 17z" {...p} /><circle cx="10" cy="8.5" r="1.8" {...p} /></>,
+  }
+  return <svg viewBox="0 0 20 20" className="h-4 w-4 shrink-0" aria-hidden="true">{formas[nome]}</svg>
+}
+
+function Avatar() {
+  return <img src="/avatar-acolhe.png" alt="" className="h-6 w-6 shrink-0 rounded-lg" />
+}
+
+function BalaoPessoa({ texto, hora }) {
   return (
-    <div className="flex justify-end">
-      <p className="max-w-[80%] rounded-2xl rounded-tr-sm bg-floresta px-4 py-2.5 text-sm text-creme whitespace-pre-wrap">
-        {texto}
-      </p>
+    <div className="flex flex-col items-end gap-1.5">
+      <span className="text-xs font-medium text-tinta-suave">Você</span>
+      <p className="max-w-[80%] rounded-3xl rounded-tr-md bg-lavanda px-4 py-3 text-sm whitespace-pre-wrap">{texto}</p>
+      {hora && <span className="text-[11px] text-tinta-suave">{hora}</span>}
     </div>
   )
 }
 
 function BalaoAcolhe({ resposta, fontes = [], status }) {
   return (
-    <div className="flex gap-3">
-      <Avatar />
+    <div className="flex flex-col items-start gap-1.5">
+      <span className="flex items-center gap-2 text-xs font-medium text-tinta-suave">
+        <Avatar /> Acolhe
+      </span>
       <div className="max-w-[85%] space-y-2">
-        <div className="rounded-2xl rounded-tl-sm bg-areia px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap">
+        <div className={`rounded-3xl rounded-tl-md px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap shadow-sm ${status === 'erro' ? 'bg-manteiga-clara' : 'bg-white'}`}>
           {resposta}
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {fontes.map((f) => (
-            <span key={f} className="rounded-full border border-linha bg-white px-2.5 py-0.5 text-xs text-tinta-suave">
-              Fonte: {f}
-            </span>
-          ))}
-          {status === 'encaminhada' && (
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-mel-claro px-2.5 py-0.5 text-xs font-medium text-tinta">
-              <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
-                <path d="M2 4h12v8H2z M2 4l6 5 6-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-              </svg>
-              Encaminhado para uma pessoa do RH
-            </span>
-          )}
-        </div>
+        {(fontes.length > 0 || status === 'encaminhada') && (
+          <div className="flex flex-wrap items-center gap-2">
+            {fontes.map((f) => (
+              <span key={f} className="rounded-full bg-lavanda-clara px-3 py-1 text-xs">
+                Fonte: {f}
+              </span>
+            ))}
+            {status === 'encaminhada' && (
+              <span className="inline-flex items-center gap-1.5 rounded-full bg-manteiga px-3 py-1 text-xs font-medium">
+                <svg viewBox="0 0 16 16" className="h-3.5 w-3.5" aria-hidden="true">
+                  <path d="M2 4h12v8H2z M2 4l6 5 6-5" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+                </svg>
+                Encaminhado para uma pessoa do RH
+              </span>
+            )}
+          </div>
+        )}
       </div>
     </div>
   )
+}
+
+function Digitando() {
+  return (
+    <div className="flex flex-col items-start gap-1.5">
+      <span className="flex items-center gap-2 text-xs font-medium text-tinta-suave">
+        <Avatar /> Acolhe
+      </span>
+      <div className="flex items-center gap-3">
+        <div className="flex gap-1 rounded-3xl rounded-tl-md bg-white px-4 py-3.5 shadow-sm" aria-label="O Acolhe está consultando o manual">
+          <span className="ponto h-2 w-2 rounded-full bg-lavanda-forte" />
+          <span className="ponto h-2 w-2 rounded-full bg-lavanda-forte" />
+          <span className="ponto h-2 w-2 rounded-full bg-lavanda-forte" />
+        </div>
+        <span className="text-xs text-tinta-suave">consultando o manual…</span>
+      </div>
+    </div>
+  )
+}
+
+function agora() {
+  return new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })
 }

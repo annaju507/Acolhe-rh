@@ -1,33 +1,51 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "DM Sans", system-ui, sans-serif;
-  --font-display: "Fraunces", Georgia, serif;
+  --font-sans: "Plus Jakarta Sans", system-ui, sans-serif;
+  --font-display: "Plus Jakarta Sans", system-ui, sans-serif;
 
-  --color-creme: #fbf8f3;
-  --color-areia: #f1ebe0;
-  --color-linha: #e3dacb;
-  --color-floresta: #1f4e47;
-  --color-floresta-escura: #163a35;
-  --color-mel: #f2b84b;
-  --color-mel-claro: #fbe9c4;
-  --color-tinta: #1d1b18;
-  --color-tinta-suave: #5c574f;
+  /* superfícies */
+  --color-fundo: #f3f1f7;
+  --color-nevoa: #f7f6fb;
+  --color-linha: #e8e5ef;
 
-  /* séries dos gráficos (paleta validada para daltonismo, slots 1 e 2) */
-  --color-serie-1: #2a78d6;
-  --color-serie-2: #eb6834;
+  /* cores da marca: lavanda, manteiga e grafite */
+  --color-lavanda: #d6cefc;
+  --color-lavanda-clara: #eeeafe;
+  --color-lavanda-forte: #7c6cf0;
+  --color-manteiga: #fde9a8;
+  --color-manteiga-clara: #fff5d6;
+  --color-grafite: #1c1b22;
+  --color-grafite-suave: #2c2b34;
+  --color-coral: #ff6b6b;
+
+  /* cores do avatar do Acolhe */
+  --color-roxo: #a87fe7;
+  --color-menta: #6ee7b9;
+
+  /* texto */
+  --color-tinta: #1c1b22;
+  --color-tinta-suave: #6b6876;
+
+  /* séries dos gráficos (validadas para daltonismo) */
+  --color-serie-1: #7c6cf0;
+  --color-serie-2: #e0a12e;
 }
 
 html {
   color-scheme: light;
-  background: var(--color-creme);
+  background: var(--color-fundo);
   color: var(--color-tinta);
 }
 
 body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  background:
+    radial-gradient(60rem 30rem at 0% 0%, #ebe6fb 0%, transparent 60%),
+    radial-gradient(50rem 30rem at 100% 100%, #fbefe4 0%, transparent 60%),
+    var(--color-fundo);
+  background-attachment: fixed;
 }
 
 @keyframes pulsar {
@@ -37,3 +55,7 @@ body {
 .ponto { animation: pulsar 1.2s infinite ease-in-out; }
 .ponto:nth-child(2) { animation-delay: 0.15s; }
 .ponto:nth-child(3) { animation-delay: 0.3s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ponto { animation: none; }
+}
