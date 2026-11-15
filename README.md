@@ -67,6 +67,12 @@ Medido com as 40 perguntas com gabarito (`dados/perguntas-teste.csv`), enviadas 
 
 **O que mudou da v1 para a v2:** quatro regras novas no prompt, uma para cada tipo de erro medido. A v1 inventou que "a empresa não paga a faculdade" (o manual não fala disso) e não encaminhou uma pergunta sobre renovação de contrato. Na v2, os dois casos foram corrigidos. Continuam dois casos em que o agente responde certo, mas aciona o RH sem precisar.
 
+## Relatório de análise das perguntas
+
+Gerado pelo agente analista a partir das 88 perguntas registradas nos testes. Versão para abrir no navegador: [`docs/relatorio-semanal.html`](docs/relatorio-semanal.html).
+
+![Relatório de análise das perguntas](docs/relatorio-semanal.png)
+
 ## Limites
 
 * As 40 perguntas foram escritas para o teste e o teste de tempo usou poucos voluntários. Isso mede o comportamento do agente, não economia comprovada numa empresa.
